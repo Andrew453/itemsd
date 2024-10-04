@@ -127,7 +127,7 @@ func (a *App) manage(confPath string) (err error) {
 		err = errors.Wrap(err, "os.OpenFile(ePath, os.O_APPEND|os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)")
 		return err
 	}
-	
+
 	var level slog.Level
 	switch a.config.LogLevel {
 	case 1:
