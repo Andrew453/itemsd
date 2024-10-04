@@ -9,22 +9,37 @@ import (
 	"strings"
 )
 
+// GetItems Обработчик запросов на получения информация об объектах item
+// /get-items
 func (h *Handler) GetItems(c echo.Context) (err error) {
 	itemsIDstr := c.Request().Header.Get("Items-IDs")
 	itemsIDs, err := validateItemsID(itemsIDstr)
+
+	resp := struct {
+		Result string `json:"result,omitempty"`
+		Data   any    `json:"data,omitempty"`
+	}{}
+
 	if err != nil {
 		slog.Error(err.Error())
-		return c.NoContent(http.StatusNotFound)
+		resp.Result = ErrorResult
+		resp.Data = err.Error()
+		return c.JSON(http.StatusNotFound, resp)
 	}
 
 	result, err := h.uc.GetItems(itemsIDs)
 	if err != nil {
 		slog.Error(err.Error())
-		return c.NoContent(http.StatusNotFound)
+		resp.Result = ErrorResult
+		resp.Data = err.Error()
+		return c.JSON(http.StatusNotFound, resp)
 	}
-	return c.JSON(http.StatusOK, result)
+	resp.Result = OkResult
+	resp.Data = result
+	return c.JSON(http.StatusOK, resp)
 }
 
+// validateItemsID проверка значение заголовка Items-IDs на валидность и парсинг значений itemsIDs
 func validateItemsID(itemsIDstr string) (itemsIDs []int, err error) {
 	defer func() {
 		err = errors.Wrap(err, "validateItemsID()")

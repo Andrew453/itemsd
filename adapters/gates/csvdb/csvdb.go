@@ -1,3 +1,4 @@
+// Package csvdb Пакет с описанием функционала работы с CSV файлом
 package csvdb
 
 import (
@@ -7,13 +8,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 )
 
 // CSVDB Функционал работы с csv файлом
 type CSVDB struct {
-	filePath string // путь к файлу хранения данных
-	headers  map[int]string
+	filePath string         // путь к файлу хранения данных
+	headers  map[int]string // Имена столбцов данных в csv файле
+	numID    int            // Порядковый номер поля ID, по которому будет осуществляться поиск
 }
 
 func NewCSVDB(config Config) (c *CSVDB, err error) {
@@ -23,6 +26,7 @@ func NewCSVDB(config Config) (c *CSVDB, err error) {
 	c = &CSVDB{}
 	c.headers = make(map[int]string)
 	c.filePath, err = filepath.Abs(config.FilePath)
+	c.numID = config.NumID
 	if err != nil {
 		err = errors.Wrap(err, "filepath.Abs(confPath)")
 		return
@@ -54,28 +58,35 @@ func (c *CSVDB) GetItems(ids []int) (items json.RawMessage, err error) {
 	}()
 	file, err := os.Open(c.filePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "os.Open(c.filePath)")
+		err = errors.Wrap(err, "os.Open(c.filePath)")
+		return
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
+
 	var res = make([]interface{}, 0, len(ids))
+	var exist bool
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
 
-		id, err := strconv.Atoi(record[1])
+		id, err := strconv.Atoi(record[c.numID])
 		if err != nil {
 			continue
 		}
-		if CheckID(id, ids) {
+		ids, exist = CheckID(id, ids)
+		if exist {
 			j, err := RecordToJSON(c.headers, record)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, j)
+		}
+		if len(ids) == 0 {
+			break
 		}
 	}
 	items, err = json.Marshal(res)
@@ -88,13 +99,19 @@ func (c *CSVDB) GetItems(ids []int) (items json.RawMessage, err error) {
 }
 
 // CheckID Функция проверки id на существование в списке ids
-func CheckID(id int, ids []int) (exists bool) {
-	for _, i := range ids {
+// Если элемент найден в массиве, то он удаляется
+func CheckID(id int, ids []int) (newIDs []int, exists bool) {
+	var delElemNum int
+	for j, i := range ids {
 		if id == i {
-			return true
+			exists = true
+			delElemNum = j
 		}
 	}
-	return false
+	if exists {
+		ids = slices.Delete(ids, delElemNum, delElemNum+1)
+	}
+	return ids, exists
 }
 
 // RecordToJSON Функция преобразования записи из csv файла в json

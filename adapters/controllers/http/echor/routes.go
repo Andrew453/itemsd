@@ -5,7 +5,7 @@ import (
 	"prjs/itemsd/adapters/controllers/http/echor/handler"
 )
 
-// Функция выставления обработки запросов по заданным путям
+// setRoutes Функция выставления обработки запросов по заданным путям
 func setRoutes(e *echo.Echo, h *handler.Handler) {
 	// e.POST...
 	// e.DELETE...

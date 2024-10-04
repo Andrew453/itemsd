@@ -1,3 +1,5 @@
+// Package echor Пакет управления HTTP/HTTPS
+// Основной объект - Server
 package echor
 
 import (
@@ -11,14 +13,16 @@ import (
 	"prjs/itemsd/model/usecase"
 )
 
+// Server структура управления HTTPS сервером
 type Server struct {
 	cfg        Config      // Конфигурация
 	certFile   interface{} // серфикат
 	keyFile    interface{} // ключ
 	errorsChan chan error  // канал ошибок
-	server     *echo.Echo
+	server     *echo.Echo  //  переменная для управления echo сервером
 }
 
+// NewServer Конструктор для создания нового экзмепляра Server
 func NewServer(cfg Config, certFile interface{}, keyFile interface{}, uc usecase.Usecase) (s *Server, err error) {
 	defer func() {
 		err = errors.Wrap(err, "echor NewServer()")
@@ -40,6 +44,7 @@ func NewServer(cfg Config, certFile interface{}, keyFile interface{}, uc usecase
 	return &Server{cfg: cfg, certFile: certFile, keyFile: keyFile, errorsChan: make(chan error, 10), server: es}, nil
 }
 
+// Start Запуск HTTP/HTTPS сервера
 func (s *Server) Start() <-chan error {
 	go func() {
 		if s.cfg.TLSEnable {
@@ -66,6 +71,7 @@ func (s *Server) Start() <-chan error {
 	return s.errorsChan
 }
 
+// Stop Завершение работы сервера
 func (s *Server) Stop() (err error) {
 	defer func() {
 		err = errors.Wrap(err, "echor (s *Server) Stop()")
