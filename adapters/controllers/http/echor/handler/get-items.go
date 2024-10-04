@@ -34,6 +34,12 @@ func (h *Handler) GetItems(c echo.Context) (err error) {
 		resp.Data = err.Error()
 		return c.JSON(http.StatusNotFound, resp)
 	}
+	if string(result) == "[]" {
+		resp.Result = ErrorResult
+		resp.Data = "Items not found"
+		return c.JSON(http.StatusNotFound, resp)
+
+	}
 	resp.Result = OkResult
 	resp.Data = result
 	return c.JSON(http.StatusOK, resp)

@@ -89,6 +89,13 @@ func (a *App) Stop() (err error) {
 			return
 		}
 	}
+	if a.db != nil {
+		err = a.db.Stop()
+		if err != nil {
+			slog.Error(err.Error())
+			return err
+		}
+	}
 	return
 }
 
